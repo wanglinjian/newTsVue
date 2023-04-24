@@ -21,3 +21,124 @@ template文件
     </div>
   </div>
 </div>
+
+script export default
+data() {
+    return {
+      images: [
+        'https://gimg2.baidu.com/image_search/src=http%3A%2F%2Fc-ssl.duitang.com%2Fuploads%2Fitem%2F202004%2F14%2F20200414073910_FcMPt.jpeg&refer=http%3A%2F%2Fc-ssl.duitang.com&app=2002&size=f9999,10000&q=a80&n=0&g=0n&fmt=auto?sec=1682561465&t=d8128a07ea87efbf17a47b5b3a9b9974',
+        'https://img.zcool.cn/community/018d7a6229938311013f01cda0568b.jpg?x-oss-process=image/auto-orient,1/resize,m_lfit,w_1280,limit_1/sharpen,100/format,webp/quality,q_100',
+        'https://caseai.oss-cn-shanghai.aliyuncs.com/form/form-123458/2023/04/24/321db12494f14dffac6e3c3efcfa76dd.jpg'
+      ],
+      clientWidth: '',
+      imgSrc: '',
+      clientIndex: -1,
+      dimensionsOpenStatus: false,
+    }
+  },
+  mounted() {
+    this.clientWidth = document.querySelector('#templateCanvas').clientWidth;
+    console.log(this.clientWidth, 'clientWidth');
+    this.clientIndex = -1;
+    // this.imgSrc = this.images[0];
+    // this.initMosaic();
+  },
+  methods: {
+    initMosaic() {
+      const that = this;
+      this.drawImageToCanvas().then(ctx => {
+          const mosaic = new Mosaic(ctx, {
+            tileWidth: 5,
+            tileHeight: 5,
+            brushSize: 1.5,
+          });
+          const MouseEvents = {
+              init () {
+                  mosaic.context.canvas.addEventListener('mousedown', MouseEvents.mousedown);
+                  mosaic.context.canvas.addEventListener('touchstart', MouseEvents.touchstart);
+              },
+              mousedown () {
+                  mosaic.context.canvas.addEventListener('mousemove', MouseEvents.mousemove);
+                  document.addEventListener('mouseup', MouseEvents.mouseup);
+              },
+              mousemove (e) {
+                  if (e.shiftKey) {
+                      mosaic.eraseTileByPoint(e.layerX, e.layerY);
+                      return;
+                  }
+                  mosaic.drawTileByPoint(e.layerX, e.layerY);
+              },
+              mouseup () {
+                  mosaic.context.canvas.removeEventListener('mousemove', MouseEvents.mousemove);
+                  document.removeEventListener('mouseup', MouseEvents.mouseup);
+              },
+          }
+          MouseEvents.init()
+      })
+    },
+    // 切换绘制图片
+    imgTabUrl(item, index) {
+      if (index === this.clientIndex) return false;
+      this.imgSrc = item;
+      this.clientIndex = index;
+      this.initMosaic();
+    },
+    // 绘制图片
+    drawImageToCanvas() {
+      const that = this;
+      const canvas = document.querySelector('#canvas');
+      const ctx = canvas.getContext('2d');
+      let imageUrl;
+      if (this.imgSrc) {
+          imageUrl = this.imgSrc;
+      }
+      return new Promise((resolve) => {
+        const image = new Image();
+        image.crossOrigin = 'Annoymous';
+        image.onload = function() {
+          canvas.width = that.clientWidth;
+          canvas.height = (image.height / (image.width/ that.clientWidth));
+          ctx.drawImage(this, 0, 0, canvas.width, canvas.height);
+          resolve(ctx);
+        }
+        image.src = imageUrl;
+      })
+    },
+    // 上传图片
+    beginUpload() {
+      const that = this;
+      html2canvas(document.querySelector('#canvas')).then(canvas => {
+        let imgUrl = canvas.toDataURL('image/png');
+        that.imgUrl = imgUrl;
+        that.canvasStatus = false;
+        that.upload();
+      })
+    },
+    // 将base64转换成file文件
+    dataUrlToFile(dataUrl, fileName) {
+      let dataArr = dataUrl.split(',');
+      let mime = dataArr[0].match(/:(.*?);/)[1];
+      let bstr = atob(dataArr[1]);
+      let n = bstr.length;
+      let u8Array = new Uint8Array(n);
+      while (n--) {
+        u8Array[n] = bstr.charCodeAt(n);
+      }
+      return new File([u8Array], fileName, {
+        type: mime,
+      })
+    },
+    // 开始上传
+    upload() {
+      const dataGetime = new Date().getTime();
+      const file = this.dataUrlToFile(this.imgUrl, dataGetime);
+      console.log(file, 'file');
+    },
+    // 判定是否是移动端
+    isMobile() {
+      let userAgentInfo = navigator.userAgent;
+      let Agents = ['Android', 'iPhone', 'SymbianOS', 'Windows Phone', 'iPad', 'iPod'];
+      let getArr = Agents.filter(i => userAgentInfo.includes(i));
+      return getArr.length ? true : false;
+    }
+  }
