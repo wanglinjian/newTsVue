@@ -1,0 +1,22 @@
+git branch   查看分支
+git branch r 查看所有分支
+git checkout 分支名  切换分支
+git status 查看修改文件
+
+git add "文件名"
+git add .
+
+git stash -u -k // 忽略所有文件
+git stash --keep-index -u // 忽略不是暂存文件
+
+git commit -m "feat: 描述"
+git commit -m "fix: 描述"
+git pull
+git push
+
+git stash pop // 恢复未提交文件
+
+
+git checkout '分支名' // 切换分支
+
+git merge '合并分支名' // 当前分支
